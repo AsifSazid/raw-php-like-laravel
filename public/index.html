@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Management Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for the modal background overlay */
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 p-8">
+
+    <div class="container mx-auto">
+        <header class="mb-6 flex justify-between items-center">
+            <h1 class="text-3xl font-bold text-gray-800">Product Index</h1>
+            <button id="create-product-btn"
+                class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300">
+                ➕ Create Product
+            </button>
+        </header>
+
+        <hr class="mb-6">
+
+        <div class="bg-white shadow-xl rounded-lg p-6 mb-8">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-700">All Products</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                ID</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Product Name</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Price</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Stock</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="products-table-body" class="bg-white divide-y divide-gray-200">
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-4 text-center">
+                <button id="load-more-products-btn"
+                    class="bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-6 rounded-lg shadow transition duration-300">
+                    Load More 10 Products
+                </button>
+            </div>
+        </div>
+
+        <hr class="mb-8">
+
+        <div id="orders-section" class="bg-white shadow-xl rounded-lg p-6" style="display: none;">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-700">Orders for Product: <span id="product-name-title"
+                    class="text-blue-600"></span></h2>
+
+            <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
+                <h3 class="text-lg font-semibold text-blue-800 mb-3">Create New Order</h3>
+                <form id="create-order-form" class="space-y-4 md:space-y-0 md:flex md:gap-4 items-end">
+                    <div class="flex-1">
+                        <label for="order-customer" class="block text-sm font-medium text-blue-700">Customer
+                            Name</label>
+                        <input type="text" id="order-customer" required
+                            class="w-full px-3 py-2 border border-blue-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500">
+                    </div>
+                    <div class="w-24">
+                        <label for="order-quantity" class="block text-sm font-medium text-blue-700">Quantity</label>
+                        <input type="number" id="order-quantity" required min="1" value="1"
+                            class="w-full px-3 py-2 border border-blue-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <button type="submit"
+                            class="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md shadow transition duration-300">
+                            Place Order
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <h3 class="text-xl font-semibold mb-3 text-gray-700 mt-6">Order History</h3>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Order ID</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Customer</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Quantity</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Order Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orders-table-body" class="bg-white divide-y divide-gray-200">
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-4 text-center">
+                <button id="load-more-orders-btn"
+                    class="bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-6 rounded-lg shadow transition duration-300">
+                    Load More 10 Orders
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="create-product-modal" class="fixed inset-0 hidden items-center justify-center z-50 modal-overlay">
+        <div
+            class="bg-white rounded-lg shadow-2xl w-full max-w-md mx-4 p-6 transform transition-all duration-300 scale-100 opacity-100">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-gray-800">Create New Product</h3>
+                <button id="close-modal-btn" class="text-gray-400 hover:text-gray-600">&times;</button>
+            </div>
+
+            <form id="create-product-form">
+                <div class="mb-4">
+                    <label for="product-name" class="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
+                    <input type="text" id="product-name" required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="mb-4">
+                    <label for="product-price" class="block text-sm font-medium text-gray-700 mb-1">Price ($)</label>
+                    <input type="number" step="0.01" id="product-price" required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="mb-6">
+                    <label for="product-stock" class="block text-sm font-medium text-gray-700 mb-1">Initial
+                        Stock</label>
+                    <input type="number" id="product-stock" required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div class="flex justify-end">
+                    <button type="submit"
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300">
+                        Save Product
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const apiUrl = 'http://my_raw_php_task.test/api/users';
+
+        async function fetchAndDisplayUsers() {
+            try {
+                // 1. API request শুরু করা
+                const response = await fetch(apiUrl);
+
+                // 2. HTTP স্ট্যাটাস চেক করা
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+
+                // 3. JSON রেসপন্স Parse করা
+                const fullDataObject = await response.json();
+
+                // 4. ব্যবহারকারীদের অ্যারে অ্যাক্সেস করা (ধরে নেওয়া হচ্ছে এটি data.data তে আছে)
+                const usersArray = fullDataObject.data;
+
+                // 5. চেক করা যে এটি একটি অ্যারে কি না এবং লুপ করা 
+                if (Array.isArray(usersArray)) {
+                    console.log('--- Fetching User Data ---');
+
+                    // for লুপ ব্যবহার করে প্রতিটি ব্যবহারকারীকে আলাদাভাবে দেখানো
+                    for (let i = 0; i < usersArray.length; i++) {
+                        const user = usersArray[i];
+
+                        // কনসোলে আউটপুট দেওয়া
+                        console.log(`User ${i + 1}:`, user);
+                        // যদি ব্যবহারকারীর id বা name থাকে, তাহলে এভাবেও দেখতে পারেন:
+                        // console.log(`ID: ${user.id}, Name: ${user.name}`); 
+                    }
+                    console.log('--- Data Fetching Complete ---');
+
+                } else {
+                    console.error('Error: "data.data" is not an array in the response.');
+                }
+
+            } catch (error) {
+                // 6. কোনো ত্রুটি ঘটলে তা দেখানো
+                console.error('An error occurred during data fetching:', error.message);
+            }
+        }
+
+        // ফাংশনটি কল করে প্রক্রিয়া শুরু করা
+        fetchAndDisplayUsers();
+
+
+
+
+
+        // --- Dummy Data Store ---
+        let products = [
+            { id: 1, name: 'Laptop Pro', price: 1200.00, stock: 50 },
+            { id: 2, name: 'Wireless Mouse', price: 25.50, stock: 150 },
+            { id: 3, name: 'Mechanical Keyboard', price: 89.99, stock: 75 },
+            { id: 4, name: 'USB-C Hub', price: 45.00, stock: 200 },
+            { id: 5, name: '4K Monitor 27"', price: 350.00, stock: 30 },
+            // Add many more dummy products for 'Load More' to work
+        ];
+
+        // Populate with many more items for pagination
+        for (let i = 6; i <= 35; i++) {
+            products.push({
+                id: i,
+                name: `Product X-${i}`,
+                price: parseFloat((10 + i * 0.5).toFixed(2)),
+                stock: 100 + i
+            });
+        }
+
+        const productOrders = {
+            1: [
+                { orderId: 'ORD001', customer: 'Alice', quantity: 2, date: '2024-10-15' },
+                { orderId: 'ORD002', customer: 'Bob', quantity: 1, date: '2024-10-16' },
+            ],
+            2: [
+                { orderId: 'ORD101', customer: 'Charlie', quantity: 5, date: '2024-10-14' },
+                { orderId: 'ORD102', customer: 'Dave', quantity: 3, date: '2024-10-15' },
+            ],
+        };
+        // Populate product 1 with many more orders for pagination
+        for (let i = 3; i <= 30; i++) {
+            if (!productOrders[1]) productOrders[1] = [];
+            productOrders[1].push({
+                orderId: `ORD00${i}`,
+                customer: `Customer ${i}`,
+                quantity: Math.floor(Math.random() * 5) + 1,
+                date: `2024-10-${i < 10 ? '0' + i : i}`
+            });
+        }
+
+
+        // --- State Management ---
+        let currentProductPage = 0;
+        const productsPerPage = 10;
+        let currentOrderPage = 0;
+        const ordersPerPage = 10;
+        let activeProductId = null; // Stores the ID of the currently selected product
+
+
+        // --- DOM Elements ---
+        const productsTableBody = document.getElementById('products-table-body');
+        const ordersTableBody = document.getElementById('orders-table-body');
+        const ordersSection = document.getElementById('orders-section');
+        const productNameTitle = document.getElementById('product-name-title');
+        const loadMoreProductsBtn = document.getElementById('load-more-products-btn');
+        const loadMoreOrdersBtn = document.getElementById('load-more-orders-btn');
+
+        const createProductBtn = document.getElementById('create-product-btn');
+        const createProductModal = document.getElementById('create-product-modal');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const createProductForm = document.getElementById('create-product-form');
+
+        // NEW: Order Form Element
+        const createOrderForm = document.getElementById('create-order-form');
+
+
+        // --- Functions (Product Management - Unchanged) ---
+
+        /** Renders a chunk of products to the table. */
+        function renderProducts(page) {
+            // ... (Product rendering logic is unchanged)
+            const start = page * productsPerPage;
+            const end = start + productsPerPage;
+            const productsToShow = products.slice(start, end);
+
+            let html = '';
+            productsToShow.forEach(product => {
+                html += `
+                    <tr class="hover:bg-gray-50 cursor-pointer product-row" data-product-id="${product.id}" data-product-name="${product.name}">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${product.id}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${product.name}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">$${product.price.toFixed(2)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${product.stock}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button class="text-blue-600 hover:text-blue-900 view-orders-btn" data-product-id="${product.id}" data-product-name="${product.name}">View Orders</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            productsTableBody.innerHTML += html;
+
+            currentProductPage = page + 1;
+
+            if (products.length <= currentProductPage * productsPerPage) {
+                loadMoreProductsBtn.classList.add('hidden');
+            } else {
+                loadMoreProductsBtn.classList.remove('hidden');
+            }
+        }
+
+        function handleCreateProduct(event) {
+            // ... (Create Product logic is unchanged)
+            event.preventDefault();
+
+            const name = document.getElementById('product-name').value.trim();
+            const price = parseFloat(document.getElementById('product-price').value);
+            const stock = parseInt(document.getElementById('product-stock').value, 10);
+
+            if (name === '' || isNaN(price) || isNaN(stock)) {
+                alert('Please fill out all fields correctly with valid numbers for Price and Stock.');
+                return;
+            }
+
+            const newId = products.length > 0 ? products[products.length - 1].id + 1 : 1;
+            const newProduct = { id: newId, name: name, price: price, stock: stock };
+
+            products.unshift(newProduct);
+            productOrders[newId] = [];
+
+            productsTableBody.innerHTML = '';
+            currentProductPage = 0;
+            renderProducts(currentProductPage);
+
+            createProductModal.classList.add('hidden');
+            createProductModal.classList.remove('flex');
+            createProductForm.reset();
+
+            alert(`Product "${name}" saved and added to the list!`);
+        }
+
+
+        // --- Functions (Order Management - Modified) ---
+
+        /** Renders a chunk of orders for the active product. */
+        function renderOrders(productId, page) {
+            const orders = productOrders[productId] || [];
+            const start = page * ordersPerPage;
+            const end = start + ordersPerPage;
+            const ordersToShow = orders.slice(start, end);
+
+            let html = '';
+            ordersToShow.forEach(order => {
+                html += `
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${order.orderId}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${order.customer}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${order.quantity}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${order.date}</td>
+                    </tr>
+                `;
+            });
+
+            ordersTableBody.innerHTML += html;
+
+            currentOrderPage = page + 1;
+
+            if (orders.length <= currentOrderPage * ordersPerPage) {
+                loadMoreOrdersBtn.classList.add('hidden');
+            } else {
+                loadMoreOrdersBtn.classList.remove('hidden');
+            }
+        }
+
+        /** Clears the current order list and renders the first page of orders for a product. */
+        function showProductOrders(productId, productName) {
+            activeProductId = productId;
+            currentOrderPage = 0;
+            ordersTableBody.innerHTML = '';
+
+            productNameTitle.textContent = productName;
+            ordersSection.style.display = 'block';
+
+            renderOrders(productId, currentOrderPage);
+
+            ordersSection.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        /** NEW: Handles the creation of a new order for the active product. */
+        function handleCreateOrder(event) {
+            event.preventDefault();
+
+            if (!activeProductId) {
+                alert("Error: No product selected for this order.");
+                return;
+            }
+
+            const customer = document.getElementById('order-customer').value.trim();
+            const quantity = parseInt(document.getElementById('order-quantity').value, 10);
+
+            if (customer === '' || isNaN(quantity) || quantity <= 0) {
+                alert('Please enter a valid customer name and a quantity greater than zero.');
+                return;
+            }
+
+            const orders = productOrders[activeProductId] || [];
+            const newOrderId = `ORD${(orders.length + 1).toString().padStart(3, '0')}-${activeProductId}`;
+            const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+
+            const newOrder = {
+                orderId: newOrderId,
+                customer: customer,
+                quantity: quantity,
+                date: today
+            };
+
+            // Add the new order to the beginning of the array
+            if (!productOrders[activeProductId]) productOrders[activeProductId] = [];
+            productOrders[activeProductId].unshift(newOrder);
+
+            // Reset the order view to show the new order immediately
+            showProductOrders(activeProductId, productNameTitle.textContent);
+
+            createOrderForm.reset();
+            alert(`New order (${newOrderId}) placed for ${productNameTitle.textContent}!`);
+        }
+
+
+        // --- Event Listeners ---
+
+        // 1. Modal Toggle (Product)
+        createProductBtn.addEventListener('click', () => {
+            createProductModal.classList.remove('hidden');
+            createProductModal.classList.add('flex');
+        });
+
+        closeModalBtn.addEventListener('click', () => {
+            createProductModal.classList.add('hidden');
+            createProductModal.classList.remove('flex');
+        });
+
+        createProductModal.addEventListener('click', (e) => {
+            if (e.target === createProductModal) {
+                createProductModal.classList.add('hidden');
+                createProductModal.classList.remove('flex');
+            }
+        });
+
+        // 2. Form Submission (Save Product)
+        createProductForm.addEventListener('submit', handleCreateProduct);
+
+        // NEW: 3. Form Submission (Save Order)
+        createOrderForm.addEventListener('submit', handleCreateOrder);
+
+
+        // 4. View Orders (Click on a product row or button)
+        productsTableBody.addEventListener('click', (e) => {
+            const row = e.target.closest('.product-row, .view-orders-btn');
+            if (row) {
+                const isButton = e.target.classList.contains('view-orders-btn');
+                const targetRow = isButton ? e.target.closest('tr') : row;
+
+                const productId = parseInt(targetRow.dataset.productId);
+                const productName = targetRow.dataset.productName;
+
+                showProductOrders(productId, productName);
+            }
+        });
+
+        // 5. Load More Products
+        loadMoreProductsBtn.addEventListener('click', () => {
+            renderProducts(currentProductPage);
+        });
+
+        // 6. Load More Orders
+        loadMoreOrdersBtn.addEventListener('click', () => {
+            if (activeProductId) {
+                renderOrders(activeProductId, currentOrderPage);
+            }
+        });
+
+
+        // --- Initial Load ---
+        renderProducts(currentProductPage);
+
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,5 @@
+{
+    "name": "myrawphp/task",
+    "description": "Minimal raw PHP REST API",
+    "require": {}
+}
