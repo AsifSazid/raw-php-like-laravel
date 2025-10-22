@@ -54,24 +54,27 @@ class Order
         return $stmt->execute([$id]);
     }
 
-    // Transaction controls
-    public function beginTransaction()
-    {
-        $this->conn->beginTransaction();
-    }
-    public function commit()
-    {
-        $this->conn->commit();
-    }
-    public function rollBack()
-    {
-        $this->conn->rollBack();
-    }
-
+    // 🔹 Simplified: Get last order (for generating next order_id)
     public function getLastOrder()
     {
-        $stmt = $this->conn->prepare("SELECT order_id FROM {$this->table} ORDER BY id DESC LIMIT 1");
-        $stmt->execute();
+        $sql = "SELECT order_id FROM {$this->table} ORDER BY id DESC LIMIT 1";
+        $stmt = $this->conn->query($sql);
         return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function getByProductId($productId)
+    {
+        $sql = "
+        SELECT 
+            o.id, o.order_id, o.customer_name, o.qty, o.total_price, o.created_at,
+            p.name AS product_name, p.price AS product_price
+        FROM {$this->table} o
+        JOIN products p ON o.product_id = p.id
+        WHERE o.product_id = ?
+        ORDER BY o.id DESC
+    ";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute([$productId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }

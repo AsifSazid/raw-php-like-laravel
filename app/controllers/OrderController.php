@@ -42,7 +42,7 @@ class OrderController extends Controller
     {
         $input = json_decode(file_get_contents('php://input'), true);
 
-        // Validate input except order_id (auto-generated)
+        // Validation
         $required = ['customer_name', 'product_id', 'qty', 'total_price'];
         foreach ($required as $field) {
             if (empty($input[$field])) {
@@ -50,17 +50,16 @@ class OrderController extends Controller
             }
         }
 
-        // Load product model if not loaded globally
         require_once __DIR__ . '/../models/Product.php';
         $this->productModel = new Product();
 
-        // Fetch product
+        // 1️⃣ Find product
         $product = $this->productModel->find($input['product_id']);
         if (!$product) {
             return $this->response(['message' => 'Product not found'], 404);
         }
 
-        // Check stock availability
+        // 2️⃣ Check stock
         if ($product['stock'] < $input['qty']) {
             return $this->response([
                 'message' => 'Insufficient stock',
@@ -68,50 +67,51 @@ class OrderController extends Controller
             ], 400);
         }
 
-        try {
-            $this->order->beginTransaction();
-
-            // 🔹 Generate new sequential order ID
-            $lastOrder = $this->order->getLastOrder();
-            if ($lastOrder && preg_match('/ORD-(\d+)/', $lastOrder['order_id'], $matches)) {
-                $nextNumber = intval($matches[1]) + 1;
-            } else {
-                $nextNumber = 1001; // starting number if table empty
-            }
-            $newOrderId = "ORD-" . $nextNumber;
-
-            // 🔹 Create new order
-            $this->order->create(
-                $newOrderId,
-                $input['customer_name'],
-                $input['product_id'],
-                $input['qty'],
-                $input['total_price']
-            );
-
-            // 🔹 Update product stock
-            $newStock = $product['stock'] - $input['qty'];
-            $this->productModel->update(
-                $product['id'],
-                $product['name'],
-                $product['price'],
-                $newStock
-            );
-
-            $this->order->commit();
-            return $this->response([
-                'message' => 'Order created successfully',
-                'order_id' => $newOrderId
-            ], 201);
-        } catch (Exception $e) {
-            $this->order->rollBack();
-            return $this->response([
-                'message' => 'Transaction failed',
-                'error' => $e->getMessage()
-            ], 500);
+        // 3️⃣ Get last order ID
+        $lastOrder = $this->order->getLastOrder();
+        if ($lastOrder && preg_match('/ORD-(\d+)/', $lastOrder['order_id'], $matches)) {
+            $nextNumber = intval($matches[1]) + 1;
+        } else {
+            $nextNumber = 1001;
         }
+        $newOrderId = "ORD-" . $nextNumber;
+
+        // 4️⃣ Create order
+        $this->order->create(
+            $newOrderId,
+            $input['customer_name'],
+            $input['product_id'],
+            $input['qty'],
+            $input['total_price']
+        );
+
+        // 5️⃣ Update stock (simple update)
+        $newStock = $product['stock'] - $input['qty'];
+        $this->productModel->update(
+            $product['id'],
+            $product['name'],
+            $product['price'],
+            $newStock
+        );
+
+        // 6️⃣ Return success
+        return $this->response([
+            'message' => 'Order created successfully',
+            'order_id' => $newOrderId
+        ], 201);
     }
 
+    // GET /api/orders/product/{product_id}
+    public function getByProduct($productId)
+    {
+        $orders = $this->order->getByProductId($productId);
+
+        if ($orders && count($orders) > 0) {
+            return $this->response(['data' => $orders]);
+        } else {
+            return $this->response(['message' => 'No orders found for this product'], 404);
+        }
+    }
 
     // DELETE /api/orders/{id}
     public function destroy($id)
