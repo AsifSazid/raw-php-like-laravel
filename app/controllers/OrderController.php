@@ -14,7 +14,6 @@ class OrderController extends Controller
         $database = new Database();
         $pdo = $database->connect();
 
-        // Share same PDO across both models
         $this->order = new Order($pdo);
         $this->productModel = new Product($pdo);
     }
@@ -42,7 +41,6 @@ class OrderController extends Controller
     {
         $input = json_decode(file_get_contents('php://input'), true);
 
-        // Validation
         $required = ['customer_name', 'product_id', 'qty', 'total_price'];
         foreach ($required as $field) {
             if (empty($input[$field])) {
@@ -53,13 +51,11 @@ class OrderController extends Controller
         require_once __DIR__ . '/../models/Product.php';
         $this->productModel = new Product();
 
-        // 1️⃣ Find product
         $product = $this->productModel->find($input['product_id']);
         if (!$product) {
             return $this->response(['message' => 'Product not found'], 404);
         }
 
-        // 2️⃣ Check stock
         if ($product['stock'] < $input['qty']) {
             return $this->response([
                 'message' => 'Insufficient stock',
@@ -67,7 +63,6 @@ class OrderController extends Controller
             ], 400);
         }
 
-        // 3️⃣ Get last order ID
         $lastOrder = $this->order->getLastOrder();
         if ($lastOrder && preg_match('/ORD-(\d+)/', $lastOrder['order_id'], $matches)) {
             $nextNumber = intval($matches[1]) + 1;
@@ -76,7 +71,6 @@ class OrderController extends Controller
         }
         $newOrderId = "ORD-" . $nextNumber;
 
-        // 4️⃣ Create order
         $this->order->create(
             $newOrderId,
             $input['customer_name'],
@@ -85,7 +79,6 @@ class OrderController extends Controller
             $input['total_price']
         );
 
-        // 5️⃣ Update stock (simple update)
         $newStock = $product['stock'] - $input['qty'];
         $this->productModel->update(
             $product['id'],
@@ -94,7 +87,6 @@ class OrderController extends Controller
             $newStock
         );
 
-        // 6️⃣ Return success
         return $this->response([
             'message' => 'Order created successfully',
             'order_id' => $newOrderId

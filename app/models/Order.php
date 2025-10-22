@@ -54,7 +54,6 @@ class Order
         return $stmt->execute([$id]);
     }
 
-    // 🔹 Simplified: Get last order (for generating next order_id)
     public function getLastOrder()
     {
         $sql = "SELECT order_id FROM {$this->table} ORDER BY id DESC LIMIT 1";

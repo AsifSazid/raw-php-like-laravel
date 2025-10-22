@@ -7,7 +7,6 @@
     <title>Product Management Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Custom styles for the modal background overlay */
         .modal-overlay {
             background-color: rgba(0, 0, 0, 0.5);
         }
@@ -159,7 +158,7 @@
 
     <script>
         // --- State Management ---
-        let products = []; // Global array to store all products
+        let products = [];
         const productApiUrl = 'http://my_raw_php_task.test/api/products';
         const ordersApiBaseUrl = 'http://my_raw_php_task.test/api/orders/product/';
 
@@ -197,7 +196,6 @@
             const end = start + productsPerPage;
             const productsToShow = products.slice(start, end);
 
-            // Clear the loading message if this is the first page
             if (page === 0) {
                 productsTableBody.innerHTML = '';
             }
@@ -231,10 +229,6 @@
             }
         }
 
-
-        /** * FIX: Handles the creation of a new product, ensuring the correct ID is used from the API 
-         * without causing a network error if the API doesn't return a perfect ID format.
-         */
         async function handleCreateProduct(event) {
             event.preventDefault();
 
@@ -264,23 +258,17 @@
 
                 console.log(response.json)
                 if (response.ok) {
-                    // Close modal and reset form immediately
                     createProductModal.classList.add('hidden');
                     createProductModal.classList.remove('flex');
                     createProductForm.reset();
 
-                    // --- CORE CHANGE: Full Data Re-Initialization ---
-
-                    // 1. Clear the local product array
                     products = [];
-                    // 2. Clear the table display (optional, initializeProducts handles this)
                     productsTableBody.innerHTML = '<tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">🔄 Reloading product data...</td></tr>';
                     currentProductPage = 0;
 
-                    // 3. Re-fetch ALL products (including the new one) and re-render the table
                     await initializeProducts();
 
-                    // alert(`✅ Product saved successfully! The product list has been refreshed.`);
+                    // alert(`Product saved successfully! The product list has been refreshed.`);
 
                 } else {
                     const errorText = await response.text();
@@ -289,7 +277,6 @@
 
             } catch (error) {
                 console.error('Network or CORS error:', error);
-                // Renamed error message to match your initial message for consistency
                 alert('A network error occurred. Could not connect to the product API.');
             }
         }
@@ -342,7 +329,6 @@
         function renderOrdersToTable(ordersToShow, totalOrderCount) {
             let html = '';
             ordersToShow.forEach(order => {
-                // Use API response keys
                 html += `
                     <tr>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${order.order_id || 'N/A'}</td>
@@ -355,7 +341,6 @@
 
             ordersTableBody.innerHTML += html;
 
-            // Logic for Load More button visibility
             if (totalOrderCount > currentOrderOffset + ordersToShow.length) {
                 loadMoreOrdersBtn.classList.remove('hidden');
             } else {
@@ -363,22 +348,18 @@
             }
         }
 
-        /** Clears the current order list and initiates the fetch for the first page of orders. */
         async function showProductOrders(productId, productName) {
             activeProductId = productId;
-            currentOrderOffset = 0; // Reset offset for a new product
+            currentOrderOffset = 0;
 
             productNameTitle.textContent = productName;
             ordersSection.style.display = 'block';
 
-            // Show loading message immediately
             ordersTableBody.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">⏳ Loading orders...</td></tr>';
             loadMoreOrdersBtn.classList.add('hidden');
 
-            // Scroll to the orders section
             ordersSection.scrollIntoView({ behavior: 'smooth' });
 
-            // Fetch and render the first batch of orders
             await fetchAndRenderOrders(productId, currentOrderOffset);
         }
 
@@ -476,7 +457,6 @@
                     });
                 });
 
-                // Add Dummy Data (Ensuring Dummy IDs are much higher than real IDs)
                 const maxApiId = products.length > 0 ? Math.max(...products.map(p => p.id)) : 0;
                 const startId = maxApiId + 1000; // Start dummy IDs much higher
 
@@ -501,8 +481,6 @@
         }
 
         // --- Event Listeners ---
-
-        // 1. Modal Toggle (Product)
         createProductBtn.addEventListener('click', () => {
             createProductModal.classList.remove('hidden');
             createProductModal.classList.add('flex');
@@ -520,14 +498,11 @@
             }
         });
 
-        // 2. Form Submission (Save Product)
         createProductForm.addEventListener('submit', handleCreateProduct);
 
-        // 3. Form Submission (Save Order)
         createOrderForm.addEventListener('submit', handleCreateOrder);
 
 
-        // 4. View Orders (Click on a product row or button)
         productsTableBody.addEventListener('click', (e) => {
             const row = e.target.closest('.product-row, .view-orders-btn');
             if (row) {
@@ -539,12 +514,10 @@
             }
         });
 
-        // 5. Load More Products
         loadMoreProductsBtn.addEventListener('click', () => {
             renderProducts(currentProductPage);
         });
 
-        // 6. Load More Orders (NOW DYNAMICALLY FETCHES FROM API)
         loadMoreOrdersBtn.addEventListener('click', () => {
             if (activeProductId) {
                 fetchAndRenderOrders(activeProductId, currentOrderOffset);
