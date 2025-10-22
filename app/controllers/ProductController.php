@@ -27,10 +27,10 @@ class ProductController extends Controller {
     // POST /api/products
     public function store() {
         $input = json_decode(file_get_contents('php://input'), true);
-        if (!isset($input['name']) || !isset($input['email'])) {
+        if (!isset($input['name']) || !isset($input['price']) || !isset($input['stock']) ){
             $this->response(['message' => 'Invalid input'], 400);
         }
-        if ($this->product->create($input['name'], $input['email'])) {
+        if ($this->product->create($input['name'], $input['price'], $input['stock'])) {
             $this->response(['message' => 'Product created successfully'], 201);
         } else {
             $this->response(['message' => 'Failed to create product'], 500);
@@ -40,7 +40,7 @@ class ProductController extends Controller {
     // PUT /api/products/{id}
     public function update($id) {
         $input = json_decode(file_get_contents('php://input'), true);
-        if (!isset($input['name']) || !isset($input['email'])) {
+        if (!isset($input['name']) || !isset($input['price']) || !isset($input['stock'])) {
             $this->response(['message' => 'Invalid input'], 400);
         }
         if ($this->product->update($id, $input['name'], $input['email'])) {

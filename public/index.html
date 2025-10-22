@@ -34,7 +34,7 @@
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                ID</th>
+                                Ser No</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Product Name</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -46,13 +46,18 @@
                         </tr>
                     </thead>
                     <tbody id="products-table-body" class="bg-white divide-y divide-gray-200">
+                        <tr>
+                            <td colspan="5" class="px-6 py-4 text-center text-gray-500">
+                                ⏳ Loading products from API...
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
 
             <div class="mt-4 text-center">
                 <button id="load-more-products-btn"
-                    class="bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-6 rounded-lg shadow transition duration-300">
+                    class="hidden bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-6 rounded-lg shadow transition duration-300">
                     Load More 10 Products
                 </button>
             </div>
@@ -102,13 +107,13 @@
                         </tr>
                     </thead>
                     <tbody id="orders-table-body" class="bg-white divide-y divide-gray-200">
-                    </tbody>
+                        </tbody>
                 </table>
             </div>
 
             <div class="mt-4 text-center">
                 <button id="load-more-orders-btn"
-                    class="bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-6 rounded-lg shadow transition duration-300">
+                    class="hidden bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-6 rounded-lg shadow transition duration-300">
                     Load More 10 Orders
                 </button>
             </div>
@@ -153,105 +158,15 @@
     </div>
 
     <script>
-        const apiUrl = 'http://my_raw_php_task.test/api/users';
-
-        async function fetchAndDisplayUsers() {
-            try {
-                // 1. API request শুরু করা
-                const response = await fetch(apiUrl);
-
-                // 2. HTTP স্ট্যাটাস চেক করা
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-
-                // 3. JSON রেসপন্স Parse করা
-                const fullDataObject = await response.json();
-
-                // 4. ব্যবহারকারীদের অ্যারে অ্যাক্সেস করা (ধরে নেওয়া হচ্ছে এটি data.data তে আছে)
-                const usersArray = fullDataObject.data;
-
-                // 5. চেক করা যে এটি একটি অ্যারে কি না এবং লুপ করা 
-                if (Array.isArray(usersArray)) {
-                    console.log('--- Fetching User Data ---');
-
-                    // for লুপ ব্যবহার করে প্রতিটি ব্যবহারকারীকে আলাদাভাবে দেখানো
-                    for (let i = 0; i < usersArray.length; i++) {
-                        const user = usersArray[i];
-
-                        // কনসোলে আউটপুট দেওয়া
-                        console.log(`User ${i + 1}:`, user);
-                        // যদি ব্যবহারকারীর id বা name থাকে, তাহলে এভাবেও দেখতে পারেন:
-                        // console.log(`ID: ${user.id}, Name: ${user.name}`); 
-                    }
-                    console.log('--- Data Fetching Complete ---');
-
-                } else {
-                    console.error('Error: "data.data" is not an array in the response.');
-                }
-
-            } catch (error) {
-                // 6. কোনো ত্রুটি ঘটলে তা দেখানো
-                console.error('An error occurred during data fetching:', error.message);
-            }
-        }
-
-        // ফাংশনটি কল করে প্রক্রিয়া শুরু করা
-        fetchAndDisplayUsers();
-
-
-
-
-
-        // --- Dummy Data Store ---
-        let products = [
-            { id: 1, name: 'Laptop Pro', price: 1200.00, stock: 50 },
-            { id: 2, name: 'Wireless Mouse', price: 25.50, stock: 150 },
-            { id: 3, name: 'Mechanical Keyboard', price: 89.99, stock: 75 },
-            { id: 4, name: 'USB-C Hub', price: 45.00, stock: 200 },
-            { id: 5, name: '4K Monitor 27"', price: 350.00, stock: 30 },
-            // Add many more dummy products for 'Load More' to work
-        ];
-
-        // Populate with many more items for pagination
-        for (let i = 6; i <= 35; i++) {
-            products.push({
-                id: i,
-                name: `Product X-${i}`,
-                price: parseFloat((10 + i * 0.5).toFixed(2)),
-                stock: 100 + i
-            });
-        }
-
-        const productOrders = {
-            1: [
-                { orderId: 'ORD001', customer: 'Alice', quantity: 2, date: '2024-10-15' },
-                { orderId: 'ORD002', customer: 'Bob', quantity: 1, date: '2024-10-16' },
-            ],
-            2: [
-                { orderId: 'ORD101', customer: 'Charlie', quantity: 5, date: '2024-10-14' },
-                { orderId: 'ORD102', customer: 'Dave', quantity: 3, date: '2024-10-15' },
-            ],
-        };
-        // Populate product 1 with many more orders for pagination
-        for (let i = 3; i <= 30; i++) {
-            if (!productOrders[1]) productOrders[1] = [];
-            productOrders[1].push({
-                orderId: `ORD00${i}`,
-                customer: `Customer ${i}`,
-                quantity: Math.floor(Math.random() * 5) + 1,
-                date: `2024-10-${i < 10 ? '0' + i : i}`
-            });
-        }
-
-
         // --- State Management ---
+        let products = []; // Global array to store all products (API + Dummy)
+        const productApiUrl = 'http://my_raw_php_task.test/api/products';
+
         let currentProductPage = 0;
         const productsPerPage = 10;
         let currentOrderPage = 0;
         const ordersPerPage = 10;
         let activeProductId = null; // Stores the ID of the currently selected product
-
 
         // --- DOM Elements ---
         const productsTableBody = document.getElementById('products-table-body');
@@ -265,27 +180,57 @@
         const createProductModal = document.getElementById('create-product-modal');
         const closeModalBtn = document.getElementById('close-modal-btn');
         const createProductForm = document.getElementById('create-product-form');
-
-        // NEW: Order Form Element
         const createOrderForm = document.getElementById('create-order-form');
 
 
-        // --- Functions (Product Management - Unchanged) ---
+        // --- Dummy Order Data Store (Replace with API fetch in a real app) ---
+        const productOrders = {
+            1: [
+                { orderId: 'ORD001', customer: 'Alice', quantity: 2, date: '2024-10-15' },
+                { orderId: 'ORD002', customer: 'Bob', quantity: 1, date: '2024-10-16' },
+            ],
+            2: [
+                { orderId: 'ORD101', customer: 'Charlie', quantity: 5, date: '2024-10-14' },
+                { orderId: 'ORD102', customer: 'Dave', quantity: 3, date: '2024-10-15' },
+            ],
+        };
+
+        // Populate product 1 with many more orders for pagination
+        for (let i = 3; i <= 30; i++) {
+            if (!productOrders[1]) productOrders[1] = [];
+            productOrders[1].push({
+                orderId: `ORD00${i}`,
+                customer: `Customer ${i}`,
+                quantity: Math.floor(Math.random() * 5) + 1,
+                date: `2024-10-${i < 10 ? '0' + i : i}`
+            });
+        }
+
+
+        // --- Functions (Product Management) ---
 
         /** Renders a chunk of products to the table. */
         function renderProducts(page) {
-            // ... (Product rendering logic is unchanged)
             const start = page * productsPerPage;
             const end = start + productsPerPage;
             const productsToShow = products.slice(start, end);
 
+            // Clear the loading message if this is the first page
+            if (page === 0) {
+                productsTableBody.innerHTML = '';
+            }
+
             let html = '';
-            productsToShow.forEach(product => {
+            productsToShow.forEach((product, index) => {
+                // Ensure price is treated as a number before calling toFixed
+                const serialNumber = start + index + 1;
+                const priceValue = parseFloat(product.price);
+                
                 html += `
                     <tr class="hover:bg-gray-50 cursor-pointer product-row" data-product-id="${product.id}" data-product-name="${product.name}">
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${product.id}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${serialNumber}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${product.name}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">$${product.price.toFixed(2)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">$${priceValue.toFixed(2)}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${product.stock}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <button class="text-blue-600 hover:text-blue-900 view-orders-btn" data-product-id="${product.id}" data-product-name="${product.name}">View Orders</button>
@@ -305,38 +250,78 @@
             }
         }
 
-        function handleCreateProduct(event) {
-            // ... (Create Product logic is unchanged)
+
+        /** Handles the creation of a new product by sending data to the API. */
+        async function handleCreateProduct(event) {
             event.preventDefault();
 
             const name = document.getElementById('product-name').value.trim();
             const price = parseFloat(document.getElementById('product-price').value);
             const stock = parseInt(document.getElementById('product-stock').value, 10);
 
-            if (name === '' || isNaN(price) || isNaN(stock)) {
-                alert('Please fill out all fields correctly with valid numbers for Price and Stock.');
+            if (name === '' || isNaN(price) || isNaN(stock) || price <= 0 || stock < 0) {
+                alert('Please fill out all fields correctly with valid numbers for Price ( > 0) and Stock (>= 0).');
                 return;
             }
 
-            const newId = products.length > 0 ? products[products.length - 1].id + 1 : 1;
-            const newProduct = { id: newId, name: name, price: price, stock: stock };
+            const productData = {
+                name: name,
+                // Send price and stock as strings to prevent precision issues during transfer
+                price: price.toFixed(2),
+                stock: stock.toString()
+            };
 
-            products.unshift(newProduct);
-            productOrders[newId] = [];
+            try {
+                // Send the POST request to the API
+                const response = await fetch(productApiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(productData)
+                });
 
-            productsTableBody.innerHTML = '';
-            currentProductPage = 0;
-            renderProducts(currentProductPage);
+                // Handle the API response
+                if (response.ok) {
+                    const result = await response.json();
 
-            createProductModal.classList.add('hidden');
-            createProductModal.classList.remove('flex');
-            createProductForm.reset();
+                    // --- SUCCESS: Update Frontend ---
+                    const newProduct = {
+                        // Use ID from API result if available, otherwise use a local fallback
+                        id: result.id || (products.length > 0 ? products[0].id + 1 : 1), 
+                        name: name,
+                        price: price, // Store as numeric for rendering/logic
+                        stock: stock
+                    };
 
-            alert(`Product "${name}" saved and added to the list!`);
+                    // Add to the beginning of the list and initialize orders array
+                    products.unshift(newProduct);
+                    productOrders[newProduct.id] = [];
+
+                    // Clear and re-render the first page of products
+                    productsTableBody.innerHTML = '';
+                    currentProductPage = 0;
+                    renderProducts(currentProductPage);
+
+                    // Close modal and reset form
+                    createProductModal.classList.add('hidden');
+                    createProductModal.classList.remove('flex');
+                    createProductForm.reset();
+
+                    alert(`Product "${name}" saved successfully! New ID: ${newProduct.id}`);
+
+                } else {
+                    const errorText = await response.text();
+                    alert(`Failed to save product. Server responded with status ${response.status}. Error: ${errorText}`);
+                }
+
+            } catch (error) {
+                console.error('Network or CORS error:', error);
+                alert('A network error occurred. Could not connect to the product API.');
+            }
         }
 
-
-        // --- Functions (Order Management - Modified) ---
+        // --- Functions (Order Management) ---
 
         /** Renders a chunk of orders for the active product. */
         function renderOrders(productId, page) {
@@ -344,6 +329,10 @@
             const start = page * ordersPerPage;
             const end = start + ordersPerPage;
             const ordersToShow = orders.slice(start, end);
+
+            if (page === 0) {
+                ordersTableBody.innerHTML = '';
+            }
 
             let html = '';
             ordersToShow.forEach(order => {
@@ -379,10 +368,11 @@
 
             renderOrders(productId, currentOrderPage);
 
+            // Scroll to the orders section
             ordersSection.scrollIntoView({ behavior: 'smooth' });
         }
 
-        /** NEW: Handles the creation of a new order for the active product. */
+        /** Handles the creation of a new order for the active product. (Dummy) */
         function handleCreateOrder(event) {
             event.preventDefault();
 
@@ -399,7 +389,21 @@
                 return;
             }
 
+            // Find the product and update its stock (dummy update)
+            const product = products.find(p => p.id === activeProductId);
+            if (product && product.stock >= quantity) {
+                product.stock -= quantity;
+                // Re-render the product table row to reflect the stock change
+                productsTableBody.innerHTML = '';
+                currentProductPage = 0;
+                renderProducts(currentProductPage);
+            } else if (product) {
+                alert(`Insufficient stock. Only ${product.stock} left.`);
+                return;
+            }
+
             const orders = productOrders[activeProductId] || [];
+            // Simple ID generation for dummy orders
             const newOrderId = `ORD${(orders.length + 1).toString().padStart(3, '0')}-${activeProductId}`;
             const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
 
@@ -421,6 +425,53 @@
             alert(`New order (${newOrderId}) placed for ${productNameTitle.textContent}!`);
         }
 
+
+        // --- Data Fetching and Initialization ---
+
+        async function initializeProducts() {
+            try {
+                const response = await fetch(productApiUrl);
+                
+                if (!response.ok) {
+                    throw new Error('Network response was not ok: ' + response.statusText);
+                }
+                const data = await response.json();
+
+                // 1. Process API Data
+                let productsData = data.data;
+
+                // Populate the global 'products' array with API data
+                productsData.forEach(product => {
+                    products.push({
+                        id: parseInt(product.id), // Ensure ID is integer
+                        name: product.name,
+                        price: parseFloat(product.price), // Ensure price is float for calculation/rendering
+                        stock: parseInt(product.stock) // Ensure stock is integer
+                    });
+                });
+
+                // 2. Add Dummy Data (ONLY after API data is loaded)
+                // We start IDs from 1000 to avoid conflicts with API data IDs
+                const startId = 1000; 
+                for (let i = startId; i < startId + 30; i++) {
+                    products.push({
+                        id: i,
+                        name: `Dummy Product X-${i}`,
+                        price: parseFloat((10 + i * 0.05).toFixed(2)),
+                        stock: 100 + (i % 50)
+                    });
+                }
+                
+                // 3. Initial Load: Start rendering the first page of products
+                renderProducts(currentProductPage);
+
+            } catch (error) {
+                console.error("There was a problem with the fetch operation:", error);
+                productsTableBody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-red-600">
+                    ❌ Failed to load products. Check your API URL or CORS policy.
+                </td></tr>`;
+            }
+        }
 
         // --- Event Listeners ---
 
@@ -445,7 +496,7 @@
         // 2. Form Submission (Save Product)
         createProductForm.addEventListener('submit', handleCreateProduct);
 
-        // NEW: 3. Form Submission (Save Order)
+        // 3. Form Submission (Save Order)
         createOrderForm.addEventListener('submit', handleCreateOrder);
 
 
@@ -453,9 +504,7 @@
         productsTableBody.addEventListener('click', (e) => {
             const row = e.target.closest('.product-row, .view-orders-btn');
             if (row) {
-                const isButton = e.target.classList.contains('view-orders-btn');
-                const targetRow = isButton ? e.target.closest('tr') : row;
-
+                const targetRow = e.target.closest('tr');
                 const productId = parseInt(targetRow.dataset.productId);
                 const productName = targetRow.dataset.productName;
 
@@ -476,9 +525,8 @@
         });
 
 
-        // --- Initial Load ---
-        renderProducts(currentProductPage);
-
+        // --- Application Start ---
+        initializeProducts();
     </script>
 </body>
 

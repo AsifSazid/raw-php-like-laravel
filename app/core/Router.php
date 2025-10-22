@@ -6,10 +6,10 @@ class Router
         // Check if API route
         if (!isset($url[0]) || $url[0] !== 'api') {
             echo "<h2>Welcome to My Raw PHP API</h2>
-                  <p>Try accessing <a href='/api/users'>/api/users</a></p>";
+            <p>Try accessing <a href='/api/users'>/api/users</a></p>";
             exit;
         }
-
+        
         $resource = $url[1] ?? null;
         $id = $url[2] ?? null;
 

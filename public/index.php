@@ -9,5 +9,7 @@ require_once __DIR__ . '/../app/core/Router.php';
 $url = isset($_GET['url']) ? explode('/', trim($_GET['url'], '/')) : [];
 $method = $_SERVER['REQUEST_METHOD'];
 
+// echo $url, $method;
+
 // Let Router handle it
 Router::handle($url, $method);
