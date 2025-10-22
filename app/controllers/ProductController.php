@@ -1,21 +1,25 @@
 <?php
 require_once __DIR__ . '/../core/Controller.php';
 
-class ProductController extends Controller {
+class ProductController extends Controller
+{
     private $product;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->product = $this->model('Product');
     }
 
     // GET /api/products
-    public function index() {
+    public function index()
+    {
         $products = $this->product->getAll();
         $this->response(['data' => $products]);
     }
 
     // GET /api/products/{id}
-    public function show($id) {
+    public function show($id)
+    {
         $product = $this->product->find($id);
         if ($product) {
             $this->response(['data' => $product]);
@@ -25,9 +29,10 @@ class ProductController extends Controller {
     }
 
     // POST /api/products
-    public function store() {
+    public function store()
+    {
         $input = json_decode(file_get_contents('php://input'), true);
-        if (!isset($input['name']) || !isset($input['price']) || !isset($input['stock']) ){
+        if (!isset($input['name']) || !isset($input['price']) || !isset($input['stock'])) {
             $this->response(['message' => 'Invalid input'], 400);
         }
         if ($this->product->create($input['name'], $input['price'], $input['stock'])) {
@@ -38,12 +43,13 @@ class ProductController extends Controller {
     }
 
     // PUT /api/products/{id}
-    public function update($id) {
+    public function update($id)
+    {
         $input = json_decode(file_get_contents('php://input'), true);
         if (!isset($input['name']) || !isset($input['price']) || !isset($input['stock'])) {
             $this->response(['message' => 'Invalid input'], 400);
         }
-        if ($this->product->update($id, $input['name'], $input['email'])) {
+        if ($this->product->update($id, $input['name'], $input['price'], $input['stock'])) {
             $this->response(['message' => 'Product updated']);
         } else {
             $this->response(['message' => 'Update failed'], 500);
@@ -51,7 +57,8 @@ class ProductController extends Controller {
     }
 
     // DELETE /api/products/{id}
-    public function destroy($id) {
+    public function destroy($id)
+    {
         if ($this->product->delete($id)) {
             $this->response(['message' => 'Product deleted']);
         } else {

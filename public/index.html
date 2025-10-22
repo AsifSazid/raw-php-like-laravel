@@ -107,7 +107,7 @@
                         </tr>
                     </thead>
                     <tbody id="orders-table-body" class="bg-white divide-y divide-gray-200">
-                        </tbody>
+                    </tbody>
                 </table>
             </div>
 
@@ -225,7 +225,7 @@
                 // Ensure price is treated as a number before calling toFixed
                 const serialNumber = start + index + 1;
                 const priceValue = parseFloat(product.price);
-                
+
                 html += `
                     <tr class="hover:bg-gray-50 cursor-pointer product-row" data-product-id="${product.id}" data-product-name="${product.name}">
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${serialNumber}</td>
@@ -288,7 +288,7 @@
                     // --- SUCCESS: Update Frontend ---
                     const newProduct = {
                         // Use ID from API result if available, otherwise use a local fallback
-                        id: result.id || (products.length > 0 ? products[0].id + 1 : 1), 
+                        id: result.id || (products.length > 0 ? products[0].id + 1 : 1),
                         name: name,
                         price: price, // Store as numeric for rendering/logic
                         stock: stock
@@ -372,8 +372,8 @@
             ordersSection.scrollIntoView({ behavior: 'smooth' });
         }
 
-        /** Handles the creation of a new order for the active product. (Dummy) */
-        function handleCreateOrder(event) {
+        /** Handles the creation of a new order for the active product using the API. */
+        async function handleCreateOrder(event) {
             event.preventDefault();
 
             if (!activeProductId) {
@@ -384,54 +384,98 @@
             const customer = document.getElementById('order-customer').value.trim();
             const quantity = parseInt(document.getElementById('order-quantity').value, 10);
 
+            // Find the product locally to check stock and get price for total_price calculation
+            const product = products.find(p => p.id === activeProductId);
+
             if (customer === '' || isNaN(quantity) || quantity <= 0) {
                 alert('Please enter a valid customer name and a quantity greater than zero.');
                 return;
             }
 
-            // Find the product and update its stock (dummy update)
-            const product = products.find(p => p.id === activeProductId);
-            if (product && product.stock >= quantity) {
-                product.stock -= quantity;
-                // Re-render the product table row to reflect the stock change
-                productsTableBody.innerHTML = '';
-                currentProductPage = 0;
-                renderProducts(currentProductPage);
-            } else if (product) {
+            // Pre-flight stock check (Server must also validate this!)
+            if (product && product.stock < quantity) {
                 alert(`Insufficient stock. Only ${product.stock} left.`);
                 return;
             }
 
-            const orders = productOrders[activeProductId] || [];
-            // Simple ID generation for dummy orders
-            const newOrderId = `ORD${(orders.length + 1).toString().padStart(3, '0')}-${activeProductId}`;
-            const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+            // Calculate total price for the API
+            const totalPrice = product ? (product.price * quantity).toFixed(2) : 0;
 
-            const newOrder = {
-                orderId: newOrderId,
-                customer: customer,
-                quantity: quantity,
-                date: today
+            // 1. Prepare data in the EXACT format the API expects
+            const orderData = {
+                product_id: activeProductId,
+                customer_name: customer,
+                // *** CRITICAL FIX: Changed 'quantity' to 'qty' ***
+                qty: quantity,
+                total_price: parseFloat(totalPrice) // Send as float/number
+                // 'order_id' is usually created by the server, so we omit it here.
             };
 
-            // Add the new order to the beginning of the array
-            if (!productOrders[activeProductId]) productOrders[activeProductId] = [];
-            productOrders[activeProductId].unshift(newOrder);
+            const API_ENDPOINT = 'http://my_raw_php_task.test/api/orders';
 
-            // Reset the order view to show the new order immediately
-            showProductOrders(activeProductId, productNameTitle.textContent);
+            try {
+                // 2. Send the POST request to the Orders API
+                const response = await fetch(API_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(orderData)
+                });
 
-            createOrderForm.reset();
-            alert(`New order (${newOrderId}) placed for ${productNameTitle.textContent}!`);
+                // 3. Handle the API response
+                if (response.ok) {
+                    // Assuming the API returns the created order data (e.g., ID, date, final price)
+                    const result = await response.json();
+
+                    // --- SUCCESS: Update Frontend State ---
+
+                    // a) Update local product stock 
+                    if (product) {
+                        product.stock -= quantity;
+                    }
+
+                    // b) Add new order to the local productOrders dummy store
+                    const newOrder = {
+                        orderId: result.order_id || 'ORD-NEW-' + activeProductId, // Use API's returned order_id
+                        customer: customer,
+                        quantity: quantity,
+                        date: result.date || new Date().toISOString().slice(0, 10)
+                    };
+
+                    if (!productOrders[activeProductId]) productOrders[activeProductId] = [];
+                    productOrders[activeProductId].unshift(newOrder);
+
+                    // c) Reset and re-render the products table to show updated stock
+                    productsTableBody.innerHTML = '';
+                    currentProductPage = 0;
+                    renderProducts(currentProductPage);
+
+                    // d) Reset and re-render the orders table to show the new order
+                    showProductOrders(activeProductId, productNameTitle.textContent);
+
+                    createOrderForm.reset();
+                    alert(`✅ Order placed successfully! ID: ${newOrder.orderId}`);
+
+                } else {
+                    // Handle HTTP error statuses
+                    const errorText = await response.text();
+                    alert(`❌ Failed to place order. Server responded with status ${response.status}. Error: ${errorText}`);
+                }
+
+            } catch (error) {
+                // Handle network errors
+                console.error('Network or CORS error:', error);
+                alert('A network error occurred. Could not connect to the Orders API.');
+            }
         }
-
-
+        
         // --- Data Fetching and Initialization ---
 
         async function initializeProducts() {
             try {
                 const response = await fetch(productApiUrl);
-                
+
                 if (!response.ok) {
                     throw new Error('Network response was not ok: ' + response.statusText);
                 }
@@ -452,7 +496,7 @@
 
                 // 2. Add Dummy Data (ONLY after API data is loaded)
                 // We start IDs from 1000 to avoid conflicts with API data IDs
-                const startId = 1000; 
+                const startId = 1000;
                 for (let i = startId; i < startId + 30; i++) {
                     products.push({
                         id: i,
@@ -461,7 +505,7 @@
                         stock: 100 + (i % 50)
                     });
                 }
-                
+
                 // 3. Initial Load: Start rendering the first page of products
                 renderProducts(currentProductPage);
 
